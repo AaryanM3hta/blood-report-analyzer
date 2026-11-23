@@ -6,7 +6,11 @@ load_dotenv()
 
 st.set_page_config(page_title="Blood Work Analyzer", layout="wide")
 
-llm = ChatGoogleGenerativeAI(model="gemma-4-31b-it")
+llm = ChatGoogleGenerativeAI(
+    model="gemini-3.6-flash",
+    timeout=30,
+    max_retries=1
+    )
 
 st.markdown("""
 <style>
@@ -75,8 +79,11 @@ Format your response as:
 Blood Report:
 {blood_report}
 """
+            st.write("Step 1: Extracting blood values...")
             extraction_response = llm.invoke(extraction_prompt)
             extracted_values = extraction_response.text
+            st.write("Extracted values length:", len(extracted_values))
+            st.write("Step 1 completed!")
 
             # Stage 2: Health summary and Indian diet plan
             diet_prompt = f"""
@@ -91,11 +98,18 @@ SECTION 2 - INDIAN DIET PLAN:
 List foods to eat more of and foods to avoid, using commonly available Indian foods
 like dal, sabzi, roti, rice, etc. Keep it practical and concise.
 
+Important: Section 1 must focus ONLY on interpreting results.
+Section 2 must focus ONLY on actionable dietary suggestions.
+
+
 Blood Work Analysis:
 {extracted_values}
 """
-            diet_response = llm.invoke(diet_prompt)
+            st.write("Step 2: Generating health summary and diet plan...")
+
+            diet_response = llm.invoke("diet_prompt")
             full_response = diet_response.text
+            st.write("Step 2 completed!")
 
         # Split response into two sections
         if "SECTION 2" in full_response:
